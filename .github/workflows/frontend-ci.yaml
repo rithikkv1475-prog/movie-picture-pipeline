@@ -11,7 +11,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
           cache: npm
           cache-dependency-path: "starter/frontend/package-lock.json"
 
-       - name: Cache dependencies
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: starter/frontend/node_modules
