@@ -10,7 +10,54 @@ on:
       - ".github/workflows/backend-cd.yaml"
 
 jobs:
-  deploy:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        working-directory: starter/backend
+        run: |
+          pip install pipenv
+          pipenv install --dev
+
+      - name: Run lint
+        working-directory: starter/backend
+        run: pipenv run flake8 .
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        working-directory: starter/backend
+        run: |
+          pip install pipenv
+          pipenv install --dev
+
+      - name: Run tests
+        working-directory: starter/backend
+        run: pipenv run pytest
+
+  build:
+    needs:
+      - lint
+      - test
     runs-on: ubuntu-latest
     environment: cd
 
@@ -39,6 +86,24 @@ jobs:
           docker build -t $ECR_REGISTRY/backend:$IMAGE_TAG .
           docker push $ECR_REGISTRY/backend:$IMAGE_TAG
 
+  deploy:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    environment: cd
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
       - name: Configure kubectl
         run: |
           aws eks update-kubeconfig --name cluster --region ${{ vars.AWS_REGION }}
@@ -50,7 +115,7 @@ jobs:
       - name: Update backend image
         run: |
           kubectl set image deployment/backend \
-            backend=${{ steps.login-ecr.outputs.registry }}/backend:${{ github.sha }}
+            backend=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/backend:${{ github.sha }}
 
       - name: Verify backend deployment
         run: |
