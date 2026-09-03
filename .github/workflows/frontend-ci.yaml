@@ -52,7 +52,7 @@ jobs:
           node-version-file: "starter/frontend/.nvmrc"
           cache: npm
           cache-dependency-path: "starter/frontend/package-lock.json"
-        
+
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -97,6 +97,10 @@ jobs:
       - name: Install dependencies
         working-directory: starter/frontend
         run: npm ci
+
+      - name: Run tests
+        working-directory: starter/frontend
+        run: npm test -- --watchAll=false
 
       - name: Build Docker image
         working-directory: starter/frontend
