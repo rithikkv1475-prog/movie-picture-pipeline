@@ -115,7 +115,7 @@ jobs:
         run: |
           kubectl apply -k starter/frontend/k8s
 
-            - name: Update frontend image
+      - name: Update frontend image
         run: |
           kubectl set image deployment/frontend \
             frontend=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/frontend:${{ github.sha }}

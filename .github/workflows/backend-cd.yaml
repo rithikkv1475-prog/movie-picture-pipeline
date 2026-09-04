@@ -112,7 +112,7 @@ jobs:
         run: |
           kubectl apply -k starter/backend/k8s
 
-            - name: Update backend image
+      - name: Update backend image
         run: |
           kubectl set image deployment/backend \
             backend=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/backend:${{ github.sha }}
