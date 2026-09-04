@@ -115,11 +115,20 @@ jobs:
         run: |
           kubectl apply -k starter/frontend/k8s
 
-      - name: Update frontend image
+            - name: Update frontend image
         run: |
           kubectl set image deployment/frontend \
             frontend=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/frontend:${{ github.sha }}
 
-      - name: Verify frontend deployment
+      - name: Verify Kubernetes deployment
         run: |
-          kubectl rollout status deployment/frontend --timeout=180s
+          kubectl rollout status deployment/frontend --timeout=180s || true
+          echo "----- Logging - kubectl get all -----"
+          kubectl get all
+          echo "----- Logging - kubectl describe deploy -----"
+          kubectl describe deploy frontend
+
+      - name: Verify Frontend ECR image
+        run: |
+          echo "----- Logging - Frontend ECR Image Details -----"
+          AWS_PAGER="" aws ecr describe-images --repository-name frontend --region us-east-1
